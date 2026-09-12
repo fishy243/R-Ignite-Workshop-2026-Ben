@@ -34,7 +34,6 @@ dim(patient_data)
 names(patient_data)
 str(patient_data)
 summary(patient_data)
-type(age)
 
 ```
 
@@ -93,7 +92,8 @@ plot(patient_data$Age, patient_data$SystolicBP,
      main = "Age and Systolic Blood Pressure")
 ```
 
-**Extension question:** What additional analysis would you want before concluding that age is associated with blood pressure?
+**Extension question:** What additional analysis would you want before
+concluding that age is associated with blood pressure?
 
 ## 8. Debugging mini-challenge
 

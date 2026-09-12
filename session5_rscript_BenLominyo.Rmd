@@ -1,0 +1,209 @@
+---
+title: "R_in_action. Simple Health Data Analysis: Logistic Regression"
+output: html_document
+date: "2026-09-12"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+## Dataset: HANES_R_Ignite.csv (NHANES, 10,000 observations)
+## Outcome: Diabetes (Yes/No)
+
+# 1. Load Data
+```{r}
+df <- read.csv("HANES_R_Ignite.csv", stringsAsFactors = TRUE)
+cat("Rows:", nrow(df), " Columns:", ncol(df), "\n")
+```
+
+# 2. Select relevant variables & clean
+
+```{r}
+vars <- c("Diabetes", "Age", "Gender", "BMI", "BPSysAve", "BPDiaAve",
+          "TotChol", "PhysActive", "Smoke100")
+df <- df[, vars]
+df <- na.omit(df)
+cat("Rows after removing missing values:", nrow(df), "\n")
+```
+
+# 3. Quick EDA
+```{r}
+cat("\n--- Summary ---\n")
+print(summary(df))
+```
+# 4. Train/test split (70/30)
+```{r}
+set.seed(42)
+n <- nrow(df)
+train_idx <- sample(1:n, size = 0.7 * n)
+train <- df[train_idx, ]
+test  <- df[-train_idx, ]
+```
+# 5. Logistic regression model
+```{r}
+model <- glm(Diabetes ~ Age + Gender + BMI + BPSysAve + BPDiaAve +
+               TotChol + PhysActive + Smoke100,
+             data = train, family = binomial)
+
+cat("\n--- Logistic Regression Summary ---\n")
+print(summary(model))
+
+cat("\n--- Odds Ratios ---\n")
+print(round(exp(coef(model)), 3))
+```
+# 6. Predict on test set
+```{r}
+pred_prob <- predict(model, newdata = test, type = "response")
+pred_class <- ifelse(pred_prob > 0.5, "Yes", "No")
+```
+# 7. Evaluate
+```{r}
+accuracy <- mean(pred_class == test$Diabetes)
+cat("\n--- Model Evaluation ---\n")
+cat("Accuracy:", round(accuracy, 3), "\n")
+
+cat("\nConfusion Matrix:\n")
+print(table(Predicted = pred_class, Actual = test$Diabetes))
+```
+## =========================================================
+## Simple Health Data Analysis: Random Forest (Classical ML)
+## Dataset: HANES_R_Ignite.csv (NHANES, 10,000 observations)
+## Outcome: Diabetes (Yes/No)
+## =========================================================
+install.packages("randomForest")
+library(randomForest)
+
+# 1. Load Data
+```{r}
+df <- read.csv("HANES_R_Ignite.csv", stringsAsFactors = TRUE)
+cat("Rows:", nrow(df), " Columns:", ncol(df), "\n")
+```
+# 2. Select relevant variables & clean
+```{r}
+vars <- c("Diabetes", "Age", "Gender", "BMI", "BPSysAve", "BPDiaAve",
+          "TotChol", "PhysActive", "Smoke100")
+df <- df[, vars]
+df <- na.omit(df)
+df$Diabetes <- factor(df$Diabetes)  # ensure classification, not regression
+cat("Rows after removing missing values:", nrow(df), "\n")
+```
+# 3. Quick EDA
+```{r}
+cat("\n--- Diabetes counts ---\n")
+print(table(df$Diabetes))
+```
+# 4. Train/Test split (70/30)
+```{r}
+set.seed(42)
+n <- nrow(df)
+train_idx <- sample(1:n, size = 0.7 * n)
+train <- df[train_idx, ]
+test  <- df[-train_idx, ]
+```
+# 5. Random Forest model
+```{r}
+rf_model <- randomForest(Diabetes ~ Age + Gender + BMI + BPSysAve + BPDiaAve +
+                            TotChol + PhysActive + Smoke100,
+                          data = train, ntree = 500, importance = TRUE)
+ 
+cat("\n--- Random Forest Summary ---\n")
+print(rf_model)
+ 
+cat("\n--- Variable Importance ---\n")
+print(importance(rf_model))
+```
+# 6. Predict on test set
+```{r}
+pred_class <- predict(rf_model, newdata = test)
+```
+# 7. Evaluate
+```{r}
+accuracy <- mean(pred_class == test$Diabetes)
+cat("\n--- Model Evaluation ---\n")
+cat("Accuracy:", round(accuracy, 3), "\n")
+ 
+cat("\nConfusion Matrix:\n")
+print(table(Predicted = pred_class, Actual = test$Diabetes))
+```
+# 8. -- Additional metrics ---
+install.packages("pROC")
+# Get predicted probabilites (needed for ROC/AUC)
+```{r}
+pred_prob <- predict(rf_model, newdata = test, type = "prob")[, "Yes"]
+```
+# Precision, Recall, F1 (from the confusion matrix)
+```{r}
+cm <- table(Predicted = pred_class, Actual = test$Diabetes)
+TP <- cm["Yes", "Yes"]
+FP <- cm["Yes", "No"]
+FN <- cm["No", "Yes"]
+precision <- TP / (TP + FP)
+recall    <- TP / (TP + FN)
+f1        <- 2 * precision * recall / (precision + recall)
+
+cat("Precision:", round(precision, 3), "\n")
+cat("Recall:", round(recall, 3), "\n")
+cat("F1 Score:", round(f1, 3), "\n")
+
+# ROC curve & AUC (uses pROC package)
+library(pROC)
+roc_obj <- roc(test$Diabetes, pred_prob, levels = c("No", "Yes"), quiet = TRUE)
+cat("AUC:", round(auc(roc_obj), 3), "\n")
+```
+# --- 1. Variable importance plot (ggplot2) ---
+```{r}
+imp_df <- as.data.frame(importance(rf_model))
+imp_df$Variable <- rownames(imp_df)
+library(ggplot2)
+ggplot(imp_df, aes(x = reorder(Variable, MeanDecreaseAccuracy),
+                    y = MeanDecreaseAccuracy)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(title = "Random Forest Variable Importance",
+       x = "Variable", y = "Mean Decrease in Accuracy") +
+  theme_minimal()
+```
+# --- 2. ROC curve (ggplot2) ---
+```{r}
+roc_df <- data.frame(
+  specificity = rev(roc_obj$specificities),
+  sensitivity = rev(roc_obj$sensitivities)
+)
+
+ggplot(roc_df, aes(x = 1 - specificity, y = sensitivity)) +
+  geom_line(color = "steelblue", linewidth = 1) +
+  geom_abline(linetype = "dashed", color = "grey50") +
+  labs(title = paste("ROC Curve (AUC =", round(auc(roc_obj), 3), ")"),
+       x = "1 - Specificity", y = "Sensitivity") +
+  theme_minimal()
+```
+
+## --- 3. Error rate vs number of trees (ggplot2) ---
+```{r}
+err_df <- as.data.frame(rf_model$err.rate)
+err_df$Trees <- 1:nrow(err_df)
+err_long <- reshape(err_df, varying = names(err_df)[1:3],
+                     v.names = "ErrorRate", timevar = "Type",
+                     times = names(err_df)[1:3], direction = "long")
+
+ggplot(err_long, aes(x = Trees, y = ErrorRate, color = Type)) +
+  geom_line(linewidth = 0.8) +
+  labs(title = "RF Error Rate vs Number of Trees",
+       x = "Number of Trees", y = "Error Rate") +
+  theme_minimal()
+```
+
+## --- 4. Predicted probability by actual class (ggplot2) ---
+```{r}
+plot_df <- data.frame(pred_prob = pred_prob, Actual = test$Diabetes)
+
+ggplot(plot_df, aes(x = Actual, y = pred_prob, fill = Actual)) +
+  geom_boxplot() +
+  labs(title = "Predicted Probability by Actual Diabetes Status",
+       x = "Actual", y = "Predicted P(Diabetes = Yes)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```

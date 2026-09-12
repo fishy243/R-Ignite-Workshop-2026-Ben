@@ -18,7 +18,8 @@ head(NHANES)
 names(NHANES)
 ```
 
-The expected raw dimensions are 10,000 rows and 76 columns. If the room network is unavailable, use a previously downloaded copy with `read.csv("NHANES.csv")`.
+The expected raw dimensions are 10,000 rows and 76 columns. If the room network is unavailable, use a previously 
+downloaded copy with `read.csv("NHANES.csv")`.
 
 ## 2. Inspect and create an adult person-level teaching dataset
 
