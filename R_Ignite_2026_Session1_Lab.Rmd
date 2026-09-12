@@ -9,7 +9,8 @@ output: html_document
 
 ## Learning goals
 
-By the end of this lab, you will be able to create a small health dataset, inspect it, calculate descriptive statistics, create a visualization, and write a short interpretation.
+By the end of this lab, you will be able to create a small health dataset, inspect it, calculate descriptive statistics, 
+create a visualization, and write a short interpretation.
 
 ## 1. Create the data
 
@@ -33,11 +34,13 @@ dim(patient_data)
 names(patient_data)
 str(patient_data)
 summary(patient_data)
+type(age)
+
 ```
 
-1. What type of variable is `Age`?  
-2. What type of variable is `Diabetes`?  
-3. What is the largest BMI?  
+1. What type of variable is `Age`?  Num
+2. What type of variable is `Diabetes`?  Chr
+3. What is the largest BMI?  34
 
 ## 3. Descriptive statistics
 
