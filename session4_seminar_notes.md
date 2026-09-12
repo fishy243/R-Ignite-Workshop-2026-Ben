@@ -301,3 +301,7 @@ Data analysis:
 Study the causal effect of two hormone (estrogen and progesterone) on emotional eating in teen girls (DEBQ and PANAS).
 n = 225; ...
 166,063
+
+## Assignment submission links
+
+1st assignment submission email: [Email](aswanaeugene43@gmail.com)
